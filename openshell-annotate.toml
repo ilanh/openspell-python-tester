@@ -1,0 +1,12 @@
+# Real executables inside the sandbox image (OpenShell does not follow symlinks).
+# python:3.12-slim ships the interpreter at /usr/local/bin/python3.12; `make sandbox`
+# starts uvicorn with exactly that path, so the egress rules match the server process.
+[languages]
+python = "/usr/local/bin/python3.12"
+shell = "/bin/bash"
+
+[policy]
+# Keep the sandbox strict: only paths declared with `@openshell fs` (plus OpenShell's
+# baseline) are reachable, so the deny rows really are denied.
+include_workdir = false
+enforcement = "enforce"

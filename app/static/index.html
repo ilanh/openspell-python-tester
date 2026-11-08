@@ -1,0 +1,171 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Policy Playground</title>
+<style>
+  :root {
+    --bg: #f6f7f9; --panel: #ffffff; --ink: #16181d; --muted: #5d6573; --line: #e2e5ea;
+    --code-bg: #f1f3f6; --accent: #3a5bd9;
+    --allow: #127a3e; --allow-bg: #e3f4ea; --deny: #b42318; --deny-bg: #fde8e6;
+    --err: #8a5a00; --err-bg: #fdf1d8;
+    --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #101216; --panel: #181b21; --ink: #e8eaee; --muted: #9aa3b2; --line: #2a2f38;
+      --code-bg: #20242c; --accent: #8aa2ff;
+      --allow: #5fd38d; --allow-bg: #15301f; --deny: #ff8a7f; --deny-bg: #3a1a17;
+      --err: #f3c062; --err-bg: #33280f;
+    }
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--ink);
+         font: 14px/1.45 system-ui, -apple-system, "Segoe UI", sans-serif; }
+  header { display: flex; flex-wrap: wrap; gap: 12px 20px; align-items: center;
+           padding: 16px 24px; border-bottom: 1px solid var(--line); background: var(--panel);
+           position: sticky; top: 0; z-index: 1; }
+  h1 { font-size: 18px; margin: 0; }
+  .sub { color: var(--muted); font-size: 13px; }
+  .spacer { flex: 1; }
+  .pill { font-size: 12px; padding: 3px 10px; border-radius: 99px; border: 1px solid var(--line); }
+  .pill.on { color: var(--allow); background: var(--allow-bg); border-color: transparent; }
+  .pill.off { color: var(--err); background: var(--err-bg); border-color: transparent; }
+  .score { font-variant-numeric: tabular-nums; font-weight: 600; }
+  button { font: inherit; cursor: pointer; border-radius: 8px; border: 1px solid var(--line);
+           background: var(--panel); color: var(--ink); padding: 6px 14px; }
+  button:hover { border-color: var(--accent); }
+  button.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+  button:disabled { opacity: .55; cursor: progress; }
+  main { padding: 20px 24px 40px; max-width: 1280px; margin: 0 auto; }
+  h2 { font-size: 13px; text-transform: uppercase; letter-spacing: .06em; color: var(--muted);
+       margin: 22px 0 10px; }
+  .grid { display: grid; gap: 14px; grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); }
+  .card { background: var(--panel); border: 1px solid var(--line); border-radius: 12px;
+          padding: 14px 16px; display: flex; flex-direction: column; gap: 10px; }
+  .card.ok { border-color: var(--allow); }
+  .card.bad { border-color: var(--deny); }
+  .row { display: flex; align-items: center; gap: 8px; }
+  .title { font-family: var(--mono); font-size: 13px; font-weight: 600; word-break: break-all; flex: 1; }
+  .badge { font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 6px; letter-spacing: .03em; white-space: nowrap; }
+  .ALLOW { color: var(--allow); background: var(--allow-bg); }
+  .DENY { color: var(--deny); background: var(--deny-bg); }
+  .ERROR { color: var(--err); background: var(--err-bg); }
+  .label { font-size: 11px; color: var(--muted); }
+  .src { font-family: var(--mono); font-size: 12px; background: var(--code-bg); border-radius: 8px;
+         padding: 8px 10px; overflow-x: auto; white-space: pre; }
+  .src .loc { color: var(--muted); }
+  .src.none { color: var(--deny); white-space: normal; }
+  .why { color: var(--muted); font-size: 13px; }
+  .result { display: flex; gap: 8px; align-items: flex-start; min-height: 24px; }
+  .detail { font-family: var(--mono); font-size: 12px; color: var(--muted); word-break: break-word; flex: 1; }
+  .match { font-weight: 700; }
+  .match.yes { color: var(--allow); } .match.no { color: var(--deny); }
+  details { margin-top: 28px; background: var(--panel); border: 1px solid var(--line); border-radius: 12px; }
+  summary { cursor: pointer; padding: 12px 16px; font-weight: 600; }
+  details pre { margin: 0; padding: 0 16px 16px; font: 12px/1.5 var(--mono); overflow-x: auto; }
+  .banner { margin: 16px 0 0; padding: 10px 14px; border-radius: 10px; color: var(--err);
+            background: var(--err-bg); font-size: 13px; }
+  @media (max-width: 520px) {
+    header, main { padding-left: 16px; padding-right: 16px; }
+    .grid { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+<header>
+  <div>
+    <h1>Policy Playground</h1>
+    <div class="sub">Each card runs one action. The <code>@openshell</code> comments in the code generate the sandbox policy.</div>
+  </div>
+  <div class="spacer"></div>
+  <span id="where" class="pill">…</span>
+  <span class="score" id="score">0 / 0 match</span>
+  <button class="primary" id="runAll">Run all</button>
+</header>
+<main>
+  <div id="banner"></div>
+  <div id="groups"></div>
+  <details>
+    <summary>Generated policy (openshell/policy.yaml)</summary>
+    <pre id="policy">loading…</pre>
+  </details>
+</main>
+<script>
+const $ = (s, el = document) => el.querySelector(s);
+const esc = s => String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+const results = {};
+let actions = [];
+
+function card(a) {
+  const src = a.directives.length
+    ? `<div class="src">${a.directives.map(d => `<span class="loc">${esc(a.file)}:${d.line}</span>  # ${esc(d.text)}`).join("\n")}</div>`
+    : `<div class="src none">no <code>@openshell</code> annotation · ${esc(a.file)}:${a.line}</div>`;
+  return `<div class="card" id="c-${a.id}">
+    <div class="row"><span class="title">${esc(a.title)}</span>
+      <span class="label">expect</span><span class="badge ${a.expect}">${a.expect}</span></div>
+    ${src}
+    <div class="why">${esc(a.why)}</div>
+    <div class="row"><button data-run="${a.id}">Run</button>
+      <div class="result" id="r-${a.id}"><span class="detail">not run yet</span></div></div>
+  </div>`;
+}
+
+function render() {
+  const groups = {};
+  for (const a of actions) (groups[a.group] ||= []).push(a);
+  $("#groups").innerHTML = Object.entries(groups)
+    .map(([g, list]) => `<h2>${esc(g)}</h2><div class="grid">${list.map(card).join("")}</div>`).join("");
+}
+
+function score() {
+  const done = Object.values(results);
+  $("#score").textContent = `${done.filter(r => r.match).length} / ${actions.length} match`;
+}
+
+async function run(id) {
+  const btn = $(`[data-run="${id}"]`);
+  btn.disabled = true;
+  $(`#r-${id}`).innerHTML = `<span class="detail">running…</span>`;
+  try {
+    const r = await (await fetch(`/api/run/${id}`, { method: "POST" })).json();
+    results[id] = r;
+    $(`#r-${id}`).innerHTML =
+      `<span class="badge ${r.outcome}">${r.outcome}</span>
+       <span class="match ${r.match ? "yes" : "no"}" title="${r.match ? "matches" : "does not match"} the expected verdict">${r.match ? "✓" : "✗"}</span>
+       <span class="detail">${esc(r.detail)} · ${r.ms} ms</span>`;
+    $(`#c-${id}`).className = `card ${r.match ? "ok" : "bad"}`;
+  } catch (e) {
+    $(`#r-${id}`).innerHTML = `<span class="badge ERROR">ERROR</span><span class="detail">${esc(e)}</span>`;
+  } finally {
+    btn.disabled = false;
+    score();
+  }
+}
+
+document.addEventListener("click", e => {
+  const id = e.target.closest("[data-run]")?.dataset.run;
+  if (id) run(id);
+});
+$("#runAll").addEventListener("click", async () => {
+  $("#runAll").disabled = true;
+  await Promise.all(actions.map(a => run(a.id)));
+  $("#runAll").disabled = false;
+});
+
+(async () => {
+  const data = await (await fetch("/api/actions")).json();
+  actions = data.actions;
+  const where = $("#where");
+  where.textContent = data.sandbox ? `in OpenShell sandbox · ${data.host}` : `not sandboxed · ${data.host}`;
+  where.className = `pill ${data.sandbox ? "on" : "off"}`;
+  if (!data.sandbox) $("#banner").innerHTML =
+    `<div class="banner">Running outside OpenShell, so nothing is enforced: expect DENY rows to come back ALLOW or ERROR. Run <code>make sandbox</code> to see the policy in action.</div>`;
+  render();
+  score();
+  $("#policy").textContent = await (await fetch("/api/policy")).text();
+})();
+</script>
+</body>
+</html>
