@@ -1,0 +1,49 @@
+name: OpenShell policy
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: policy-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  check:
+    name: drift + lint
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+      - uses: ilanh/openshell-annotate/actions/setup@v0.1.0-rc.3
+      # Fails when openshell/policy.yaml no longer matches the @openshell directives.
+      - uses: ilanh/openshell-annotate/actions/drift@v0.1.0-rc.3
+        with:
+          policy: openshell/policy.yaml
+      # The playground's DENY cards are unannotated on purpose, so lint warns but only errors fail the job.
+      - uses: ilanh/openshell-annotate/actions/lint@v0.1.0-rc.3
+        with:
+          policy: openshell/policy.yaml
+          failure-threshold: error
+
+  image:
+    name: build sandbox image
+    needs: check
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+      - uses: ilanh/openshell-annotate/actions/setup@v0.1.0-rc.3
+      # Regenerate the policy the image ships with and keep it as a build artifact.
+      - uses: ilanh/openshell-annotate/actions/generate@v0.1.0-rc.3
+        with:
+          policy-out: openshell/policy.yaml
+          upload-artifact: "true"
+          artifact-name: playground-policy
+      - name: Build image (not pushed)
+        run: docker build -t policy-playground:ci .
