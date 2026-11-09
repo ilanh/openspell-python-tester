@@ -13,21 +13,21 @@ concurrency:
   group: policy-${{ github.ref }}
   cancel-in-progress: true
 
+# Tracks openshell-annotate main: the actions come from @main and `version: source`
+# builds the CLI from those same sources, so this playground catches upstream breakage early.
+
 jobs:
   check:
     name: drift + lint
     runs-on: ubuntu-24.04
-    timeout-minutes: 10
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
-      - uses: ilanh/openshell-annotate/actions/setup@v0.1.0-rc.3
       # Fails when openshell/policy.yaml no longer matches the @openshell directives.
-      - uses: ilanh/openshell-annotate/actions/drift@v0.1.0-rc.3
-        with:
-          policy: openshell/policy.yaml
       # The playground's DENY cards are unannotated on purpose, so lint warns but only errors fail the job.
-      - uses: ilanh/openshell-annotate/actions/lint@v0.1.0-rc.3
+      - uses: ilanh/openshell-annotate/actions/check@main
         with:
+          version: source
           policy: openshell/policy.yaml
           failure-threshold: error
 
@@ -35,12 +35,14 @@ jobs:
     name: build sandbox image
     needs: check
     runs-on: ubuntu-24.04
-    timeout-minutes: 15
+    timeout-minutes: 25
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
-      - uses: ilanh/openshell-annotate/actions/setup@v0.1.0-rc.3
+      - uses: ilanh/openshell-annotate/actions/setup@main
+        with:
+          version: source
       # Regenerate the policy the image ships with and keep it as a build artifact.
-      - uses: ilanh/openshell-annotate/actions/generate@v0.1.0-rc.3
+      - uses: ilanh/openshell-annotate/actions/generate@main
         with:
           policy-out: openshell/policy.yaml
           upload-artifact: "true"
