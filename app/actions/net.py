@@ -76,3 +76,59 @@ def httpbin_post():
     return _call(
         lambda: requests.post("https://httpbin.org/post", json={"hi": 1}, timeout=TIMEOUT)
     )
+
+
+@action(
+    "github-port-80",
+    group="network",
+    title="GET http://api.github.com/zen (port 80)",
+    expect="DENY",
+    why="the api.github.com rule is for port 443 only: the port is part of the endpoint",
+)
+def github_port_80():
+    # Deliberately unannotated: the host is declared, but not on port 80.
+    # No redirects, so an unsandboxed run reports GitHub's 301 instead of following it to 443.
+    return _call(
+        lambda: requests.get("http://api.github.com/zen", timeout=TIMEOUT, allow_redirects=False)
+    )
+
+
+@action(
+    "postman-get",
+    group="network",
+    title="GET https://postman-echo.com/get",
+    expect="ALLOW",
+    why="allow=GET:/** covers every GET path on postman-echo.com",
+)
+def postman_get():
+    # @openshell egress postman-echo.com:443 reason="demo: deny rule carves a path out of an allow" allow=GET:/** deny=GET:/status/**
+    return _call(lambda: requests.get("https://postman-echo.com/get", timeout=TIMEOUT))
+
+
+@action(
+    "postman-status",
+    group="network",
+    title="GET https://postman-echo.com/status/200",
+    expect="DENY",
+    why="same allow=GET:/**, but deny=GET:/status/** subtracts this path",
+)
+def postman_status():
+    # Covered by the postman-echo.com rule above; its deny_rules entry blocks this path.
+    # @openshell ignore kind=net reason="demo: host is declared above; the deny rule refuses this request"
+    return _call(lambda: requests.get("https://postman-echo.com/status/200", timeout=TIMEOUT))
+
+
+@action(
+    "jsonplaceholder-audit",
+    group="network",
+    title="POST https://jsonplaceholder.typicode.com/posts",
+    expect="ALLOW",
+    why="the rule only allows GET /todos/1, but enforce=audit logs the violation instead of blocking it",
+)
+def jsonplaceholder_audit():
+    # @openshell egress jsonplaceholder.typicode.com:443 reason="demo: audit mode logs instead of blocking" allow=GET:/todos/1 enforce=audit
+    return _call(
+        lambda: requests.post(
+            "https://jsonplaceholder.typicode.com/posts", json={"title": "hi"}, timeout=TIMEOUT
+        )
+    )

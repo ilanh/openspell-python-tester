@@ -36,6 +36,19 @@ def write_forbidden():
 
 
 @action(
+    "write-app",
+    group="filesystem",
+    title="write /app/x.txt",
+    expect="DENY",
+    why="/app is declared with fs read, so it is read-only",
+)
+def write_app():
+    # Deliberately unannotated: the `fs read /app` rule in app/main.py does not grant writes.
+    Path("/app/x.txt").write_text("should never land\n")
+    return "ALLOW", "wrote /app/x.txt"
+
+
+@action(
     "read-os-release",
     group="filesystem",
     title="read /etc/os-release",

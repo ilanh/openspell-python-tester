@@ -34,3 +34,42 @@ network_policies:
               path: "/get"
     binaries:
       - path: "/usr/local/bin/python3.12"  # [languages].python default
+  icanhazip_com:
+    endpoints:
+      # demo: rule bound to curl only (app/actions/proc.py:56)
+      - host: "icanhazip.com"
+        port: 443
+        protocol: rest
+        enforcement: enforce
+        access: read-only
+    binaries:
+      - path: "/usr/bin/curl"  # bin= at app/actions/proc.py:56
+  jsonplaceholder_typicode_com:
+    endpoints:
+      # demo: audit mode logs instead of blocking (app/actions/net.py:129)
+      - host: "jsonplaceholder.typicode.com"
+        port: 443
+        protocol: rest
+        enforcement: audit
+        rules:
+          - allow:
+              method: "GET"
+              path: "/todos/1"
+    binaries:
+      - path: "/usr/local/bin/python3.12"  # [languages].python default
+  postman_echo_com:
+    endpoints:
+      # demo: deny rule carves a path out of an allow (app/actions/net.py:104)
+      - host: "postman-echo.com"
+        port: 443
+        protocol: rest
+        enforcement: enforce
+        rules:
+          - allow:
+              method: "GET"
+              path: "/**"
+        deny_rules:
+          - method: "GET"
+            path: "/status/**"
+    binaries:
+      - path: "/usr/local/bin/python3.12"  # [languages].python default

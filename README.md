@@ -15,11 +15,18 @@ inside the sandbox. You can see whether the policy allowed or denied it, and whe
 | `GET example.com` | none | DENY | undeclared hosts are refused by the proxy |
 | `GET httpbin.org/get` | `egress httpbin.org:443 allow=GET:/get` | ALLOW | L7 rule on method + path |
 | `POST httpbin.org/post` | same rule | DENY | same host, request not in the allow list |
+| `GET http://api.github.com/zen` | none for port 80 | DENY | the port is part of the endpoint |
+| `GET postman-echo.com/get` | `egress postman-echo.com:443 allow=GET:/** deny=GET:/status/**` | ALLOW | wildcard L7 allow |
+| `GET postman-echo.com/status/200` | same rule | DENY | `deny_rules` subtract from the allow |
+| `POST jsonplaceholder.typicode.com/posts` | `egress ... allow=GET:/todos/1 enforce=audit` | ALLOW | audit mode logs the violation instead of blocking it |
 | `write /data/out.txt` | `fs write /data` | ALLOW | declared write root |
 | `write /opt/forbidden/x.txt` | none | DENY | Landlock blocks writes outside the policy |
+| `write /app/x.txt` | `fs read /app` only | DENY | a read root is read-only |
 | `read /etc/os-release` | none (OpenShell baseline) | ALLOW | baseline read-only paths |
 | `read /opt/forbidden/secret.txt` | none | DENY | reads are restricted too |
 | `curl api.github.com/zen` | rule names only Python | ALLOW | binaries match the process *or a parent*: curl runs as a child of Python |
+| `curl icanhazip.com` | `egress icanhazip.com:443 ... bin=/usr/bin/curl` | ALLOW | a rule bound to one binary |
+| `GET icanhazip.com` from Python | same rule | DENY | the reverse does not hold: Python is not a child of curl |
 | (startup) | `fs read /app` in `app/main.py` | — | the server can't import its own code without it |
 
 The code is in [`app/actions/`](app/actions): `net.py`, `fs.py` and `proc.py`. Each card shows its directive lines with `file:line`,
@@ -37,7 +44,7 @@ read live from the source.
 ```bash
 make scan        # every @openshell directive with its file:line
 make policy      # generate openshell/policy.yaml (validated against the OpenShell schema)
-make lint        # flags the unannotated example.com call and /opt/forbidden write, plus an info for the curl subprocess
+make lint        # flags the unannotated example.com and api.github.com:80 calls and the /opt/forbidden and /app writes, plus an info for the curl subprocess
 make sandbox     # build the image, start it in OpenShell with the policy, forward :8080
 ```
 
