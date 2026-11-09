@@ -12,24 +12,35 @@ import subprocess
 
 import requests
 
-from . import action
+from . import action, curl_op, http_op, shell_join
 from .net import TIMEOUT, _call
 
 
-def _curl(url: str) -> tuple[str, str]:
+# The exact command each curl card runs; the URL is appended.
+CURL_ARGV = ["curl", "-sS", "-o", "-", "-w", "\n%{http_code}", "--max-time", "8"]
+
+
+def _curl(url: str) -> tuple[str, str, dict]:
     p = subprocess.run(
-        ["curl", "-sS", "-o", "/dev/null", "-w", "%{http_code}", "--max-time", "8", url],
+        [*CURL_ARGV, url],
         capture_output=True,
         text=True,
         timeout=15,
     )
-    code = p.stdout.strip() or "000"
+    body, _, code = p.stdout.rpartition("\n")
+    code = code.strip() or "000"
     err = " ".join(p.stderr.split())[:200]
+    extra = {
+        "exit_code": p.returncode,
+        "http_status": int(code) if code.isdigit() and code != "000" else None,
+        "output": f"$ {shell_join([*CURL_ARGV, url])}\nexit {p.returncode}, HTTP {code}\n\n"
+        f"--- stdout ---\n{body}\n\n--- stderr ---\n{p.stderr}",
+    }
     if p.returncode == 0 and code.startswith("2"):
-        return "ALLOW", f"curl exit 0, HTTP {code}"
+        return "ALLOW", f"curl exit 0, HTTP {code}", extra
     if code == "403" or p.returncode in (7, 35, 56):
-        return "DENY", f"curl exit {p.returncode}, HTTP {code} {err}"
-    return "ERROR", f"curl exit {p.returncode}, HTTP {code} {err}"
+        return "DENY", f"curl exit {p.returncode}, HTTP {code} {err}", extra
+    return "ERROR", f"curl exit {p.returncode}, HTTP {code} {err}", extra
 
 
 @action(
@@ -38,6 +49,7 @@ def _curl(url: str) -> tuple[str, str]:
     title="curl https://api.github.com/zen",
     expect="ALLOW",
     why="the api.github.com rule names only Python, but OpenShell also matches parent processes: curl is a child of the Python server",
+    op=curl_op([*CURL_ARGV, "https://api.github.com/zen"]),
 )
 def curl_github():
     # No rule names /usr/bin/curl. The sandbox log shows it allowed under api_github_com
@@ -51,6 +63,7 @@ def curl_github():
     title="curl https://icanhazip.com",
     expect="ALLOW",
     why="bin=/usr/bin/curl binds the icanhazip.com rule to curl",
+    op=curl_op([*CURL_ARGV, "https://icanhazip.com"]),
 )
 def curl_icanhazip():
     # @openshell egress icanhazip.com:443 reason="demo: rule bound to curl only" access=read-only bin=/usr/bin/curl
@@ -63,6 +76,7 @@ def curl_icanhazip():
     title="GET https://icanhazip.com from Python",
     expect="DENY",
     why="the icanhazip.com rule names only curl, and curl is not an ancestor of the Python server",
+    op=http_op("GET", "icanhazip.com", 443, "/"),
 )
 def python_icanhazip():
     # @openshell ignore kind=net reason="demo: host is declared above for curl only; Python is refused"
