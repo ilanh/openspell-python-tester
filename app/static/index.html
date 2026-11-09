@@ -9,7 +9,7 @@
     --bg: #f6f7f9; --panel: #ffffff; --ink: #16181d; --muted: #5d6573; --line: #e2e5ea;
     --code-bg: #f1f3f6; --accent: #3a5bd9;
     --allow: #127a3e; --allow-bg: #e3f4ea; --deny: #b42318; --deny-bg: #fde8e6;
-    --err: #8a5a00; --err-bg: #fdf1d8;
+    --err: #8a5a00; --err-bg: #fdf1d8; --audit: #6b3fb5; --audit-bg: #efe7fb;
     --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
   }
   @media (prefers-color-scheme: dark) {
@@ -17,14 +17,15 @@
       --bg: #101216; --panel: #181b21; --ink: #e8eaee; --muted: #9aa3b2; --line: #2a2f38;
       --code-bg: #20242c; --accent: #8aa2ff;
       --allow: #5fd38d; --allow-bg: #15301f; --deny: #ff8a7f; --deny-bg: #3a1a17;
-      --err: #f3c062; --err-bg: #33280f;
+      --err: #f3c062; --err-bg: #33280f; --audit: #c7a6ff; --audit-bg: #2a1f3d;
     }
   }
   * { box-sizing: border-box; }
   body { margin: 0; background: var(--bg); color: var(--ink);
-         font: 14px/1.45 system-ui, -apple-system, "Segoe UI", sans-serif; }
+         font: 14px/1.5 system-ui, -apple-system, "Segoe UI", sans-serif; }
+  code { font-family: var(--mono); font-size: .92em; }
   header { display: flex; flex-wrap: wrap; gap: 12px 20px; align-items: center;
-           padding: 16px 24px; border-bottom: 1px solid var(--line); background: var(--panel);
+           padding: 16px 28px; border-bottom: 1px solid var(--line); background: var(--panel);
            position: sticky; top: 0; z-index: 1; }
   h1 { font-size: 18px; margin: 0; }
   .sub { color: var(--muted); font-size: 13px; }
@@ -34,42 +35,62 @@
   .pill.off { color: var(--err); background: var(--err-bg); border-color: transparent; }
   .score { font-variant-numeric: tabular-nums; font-weight: 600; }
   button { font: inherit; cursor: pointer; border-radius: 8px; border: 1px solid var(--line);
-           background: var(--panel); color: var(--ink); padding: 6px 14px; }
+           background: var(--panel); color: var(--ink); padding: 6px 16px; }
   button:hover { border-color: var(--accent); }
   button.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
   button:disabled { opacity: .55; cursor: progress; }
-  main { padding: 20px 24px 40px; max-width: 1280px; margin: 0 auto; }
+  main { padding: 20px 28px 48px; max-width: 1440px; margin: 0 auto; }
   h2 { font-size: 13px; text-transform: uppercase; letter-spacing: .06em; color: var(--muted);
-       margin: 22px 0 10px; }
-  .grid { display: grid; gap: 14px; grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); }
-  .card { background: var(--panel); border: 1px solid var(--line); border-radius: 12px;
-          padding: 14px 16px; display: flex; flex-direction: column; gap: 10px; }
+       margin: 28px 0 12px; }
+  /* Wide cards: one column on narrow screens, two on a laptop, never cramped. */
+  .grid { display: grid; gap: 18px; grid-template-columns: repeat(auto-fill, minmax(min(100%, 480px), 1fr)); }
+  .card { background: var(--panel); border: 1px solid var(--line); border-left-width: 4px; border-radius: 12px;
+          padding: 18px 20px; display: flex; flex-direction: column; gap: 12px; min-width: 0; }
   .card.ok { border-color: var(--allow); }
   .card.bad { border-color: var(--deny); }
-  .row { display: flex; align-items: center; gap: 8px; }
-  .title { font-family: var(--mono); font-size: 13px; font-weight: 600; word-break: break-all; flex: 1; }
+  .head { display: flex; align-items: flex-start; gap: 10px; }
+  .title { font-family: var(--mono); font-size: 14px; font-weight: 600; overflow-wrap: anywhere; flex: 1; }
+  .id { font-family: var(--mono); font-size: 11px; color: var(--muted); font-weight: 400; display: block; margin-top: 2px; }
+  .badges { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; justify-content: flex-end; }
   .badge { font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 6px; letter-spacing: .03em; white-space: nowrap; }
   .ALLOW { color: var(--allow); background: var(--allow-bg); }
   .DENY { color: var(--deny); background: var(--deny-bg); }
   .ERROR { color: var(--err); background: var(--err-bg); }
-  .label { font-size: 11px; color: var(--muted); }
-  .src { font-family: var(--mono); font-size: 12px; background: var(--code-bg); border-radius: 8px;
-         padding: 8px 10px; overflow-x: auto; white-space: pre; }
-  .src .loc { color: var(--muted); }
-  .src.none { color: var(--deny); white-space: normal; }
-  .why { color: var(--muted); font-size: 13px; }
-  .result { display: flex; gap: 8px; align-items: flex-start; min-height: 24px; }
-  .detail { font-family: var(--mono); font-size: 12px; color: var(--muted); word-break: break-word; flex: 1; }
-  .match { font-weight: 700; }
-  .match.yes { color: var(--allow); } .match.no { color: var(--deny); }
-  details { margin-top: 28px; background: var(--panel); border: 1px solid var(--line); border-radius: 12px; }
-  summary { cursor: pointer; padding: 12px 16px; font-weight: 600; }
-  details pre { margin: 0; padding: 0 16px 16px; font: 12px/1.5 var(--mono); overflow-x: auto; }
+  .AUDIT { color: var(--audit); background: var(--audit-bg); }
+  .MATCH { color: var(--allow); background: var(--allow-bg); }
+  .MISMATCH { color: #fff; background: var(--deny); }
+  .why { font-size: 13.5px; }
+  .facts { display: grid; grid-template-columns: 92px minmax(0, 1fr); gap: 8px 14px; margin: 0; }
+  .facts dt { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: .05em; padding-top: 3px; }
+  .facts dd { margin: 0; min-width: 0; }
+  .kv { display: flex; flex-wrap: wrap; gap: 4px 14px; font-size: 12.5px; }
+  .kv b { font-weight: 500; color: var(--muted); }
+  .mono, .code { font-family: var(--mono); font-size: 12px; }
+  .code { background: var(--code-bg); border-radius: 8px; padding: 8px 10px; margin: 4px 0 0;
+          white-space: pre; overflow-x: auto; }
+  .code .loc { color: var(--muted); }
+  .none { color: var(--deny); }
+  .baseline { color: var(--muted); }
+  .rule-sum { font-size: 13px; }
+  details.inline { margin-top: 4px; }
+  details.inline > summary { cursor: pointer; font-size: 12px; color: var(--accent); width: fit-content; }
+  .run { display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+         border-top: 1px dashed var(--line); padding-top: 12px; }
+  .stats { font-family: var(--mono); font-size: 12px; color: var(--muted); display: flex; gap: 12px; flex-wrap: wrap; }
+  .detail { font-family: var(--mono); font-size: 12px; overflow-wrap: anywhere; }
+  .muted { color: var(--muted); }
+  pre.out { font: 12px/1.5 var(--mono); background: var(--code-bg); border-radius: 8px; padding: 10px 12px;
+            margin: 6px 0 0; white-space: pre-wrap; overflow-wrap: anywhere; max-height: 360px; overflow: auto; }
+  details.policy { margin-top: 32px; background: var(--panel); border: 1px solid var(--line); border-radius: 12px; }
+  details.policy > summary { cursor: pointer; padding: 12px 16px; font-weight: 600; }
+  details.policy pre { margin: 0; padding: 0 16px 16px; font: 12px/1.5 var(--mono); overflow-x: auto; }
   .banner { margin: 16px 0 0; padding: 10px 14px; border-radius: 10px; color: var(--err);
             background: var(--err-bg); font-size: 13px; }
-  @media (max-width: 520px) {
-    header, main { padding-left: 16px; padding-right: 16px; }
-    .grid { grid-template-columns: 1fr; }
+  @media (max-width: 560px) {
+    header, main { padding-left: 14px; padding-right: 14px; }
+    .card { padding: 14px; }
+    .facts { grid-template-columns: 1fr; gap: 2px; }
+    .facts dd { margin-bottom: 8px; }
   }
 </style>
 </head>
@@ -82,41 +103,91 @@
   <div class="spacer"></div>
   <span id="where" class="pill">…</span>
   <span class="score" id="score">0 / 0 match</span>
+  <button id="toggleOut" title="Open or close every output panel">Expand outputs</button>
   <button class="primary" id="runAll">Run all</button>
 </header>
 <main>
   <div id="banner"></div>
   <div id="groups"></div>
-  <details>
-    <summary>Generated policy (openshell/policy.yaml)</summary>
+  <details class="policy">
+    <summary>Generated policy (<span id="policyFile">openshell/policy.yaml</span>)</summary>
     <pre id="policy">loading…</pre>
   </details>
 </main>
 <script>
 const $ = (s, el = document) => el.querySelector(s);
-const esc = s => String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+const esc = s => String(s ?? "").replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
 const results = {};
 let actions = [];
+let outOpen = false;
+
+function operation(op) {
+  if (op.kind === "fs") {
+    return `<div class="mono">${esc(op.mode)} ${esc(op.path)}</div>
+      <div class="kv"><span><b>by</b> <code>${esc(op.binary)}</code></span></div>`;
+  }
+  const cmd = op.kind === "exec"
+    ? `<div class="code">$ ${esc(op.command)}</div>`
+    : `<div class="mono">${esc(op.method)} ${esc(op.url)}</div>`;
+  return `${cmd}
+    <div class="kv">
+      <span><b>host</b> <code>${esc(op.host)}</code></span>
+      <span><b>port</b> <code>${esc(op.port)}</code></span>
+      <span><b>method</b> <code>${esc(op.method)}</code></span>
+      <span><b>path</b> <code>${esc(op.path)}</code></span>
+    </div>
+    <div class="kv">
+      <span><b>client</b> ${esc(op.client)}</span>
+      <span><b>binary</b> <code>${esc(op.binary)}</code></span>
+      ${op.parent ? `<span><b>parent</b> <code>${esc(op.parent)}</code></span>` : ""}
+    </div>`;
+}
+
+function directives(a) {
+  if (!a.directives.length)
+    return `<div class="none">none: unannotated on purpose · <code>${esc(a.file)}:${a.line}</code></div>`;
+  return `<div class="code">${a.directives.map(d =>
+    `<span class="loc">${esc(a.file)}:${d.line}</span>  # ${esc(d.text)}`).join("\n")}</div>`;
+}
+
+function rule(r) {
+  const name = r.status === "rule" ? `<code>${esc(r.name)}</code>`
+    : r.status === "baseline" ? `<span class="baseline">${esc(r.name)}</span>`
+    : `<span class="none">no rule → default deny</span>`;
+  const yaml = r.yaml
+    ? `<details class="inline" open><summary>${r.status === "rule" ? "rule" : "nearest rule"} in policy.yaml</summary><div class="code">${esc(r.yaml)}</div></details>`
+    : "";
+  return `<div>${name}</div><div class="rule-sum">${esc(r.summary)}</div>${yaml}`;
+}
 
 function card(a) {
-  const src = a.directives.length
-    ? `<div class="src">${a.directives.map(d => `<span class="loc">${esc(a.file)}:${d.line}</span>  # ${esc(d.text)}`).join("\n")}</div>`
-    : `<div class="src none">no <code>@openshell</code> annotation · ${esc(a.file)}:${a.line}</div>`;
-  return `<div class="card" id="c-${a.id}">
-    <div class="row"><span class="title">${esc(a.title)}</span>
-      <span class="label">expect</span><span class="badge ${a.expect}">${a.expect}</span></div>
-    ${src}
+  const audit = a.rule.audit ? `<span class="badge AUDIT" title="enforcement: audit">AUDIT</span>` : "";
+  const predicted = a.rule.predict && a.rule.predict !== a.expect
+    ? `<span class="muted"> · policy.yaml reads as <span class="badge ${a.rule.predict}">${a.rule.predict}</span> here</span>` : "";
+  return `<article class="card" id="c-${a.id}">
+    <div class="head">
+      <div class="title">${esc(a.title)}<span class="id">${esc(a.group)} · ${esc(a.id)}</span></div>
+      <div class="badges"><span class="badge ${a.expect}" title="expected verdict">expect ${a.expect}</span>${audit}</div>
+    </div>
     <div class="why">${esc(a.why)}</div>
-    <div class="row"><button data-run="${a.id}">Run</button>
-      <div class="result" id="r-${a.id}"><span class="detail">not run yet</span></div></div>
-  </div>`;
+    <dl class="facts">
+      <dt>Operation</dt><dd>${operation(a.op)}</dd>
+      <dt>Directive</dt><dd>${directives(a)}</dd>
+      <dt>Policy</dt><dd>${rule(a.rule)}</dd>
+      <dt>Expected</dt><dd><span class="badge ${a.expect}">${a.expect}</span>${a.rule.audit ? ` <span class="muted">(violation logged by audit mode, not blocked)</span>` : ""}${predicted}</dd>
+    </dl>
+    <div class="run"><button data-run="${a.id}">Run</button>
+      <div class="badges" id="b-${a.id}"><span class="muted">not run yet</span></div>
+      <div class="stats" id="s-${a.id}"></div></div>
+    <div id="r-${a.id}"></div>
+  </article>`;
 }
 
 function render() {
   const groups = {};
   for (const a of actions) (groups[a.group] ||= []).push(a);
   $("#groups").innerHTML = Object.entries(groups)
-    .map(([g, list]) => `<h2>${esc(g)}</h2><div class="grid">${list.map(card).join("")}</div>`).join("");
+    .map(([g, list]) => `<h2>${esc(g)} · ${list.length}</h2><div class="grid">${list.map(card).join("")}</div>`).join("");
 }
 
 function score() {
@@ -124,20 +195,32 @@ function score() {
   $("#score").textContent = `${done.filter(r => r.match).length} / ${actions.length} match`;
 }
 
+function showResult(id, r) {
+  $(`#b-${id}`).innerHTML =
+    `<span class="badge ${r.outcome}" title="actual outcome">${r.outcome}</span>
+     <span class="badge ${r.match ? "MATCH" : "MISMATCH"}">${r.match ? "✓ match" : `✗ mismatch: expected ${esc(r.expect)}`}</span>`;
+  const stats = [];
+  if (r.http_status != null) stats.push(`HTTP ${r.http_status}`);
+  if (r.exit_code != null) stats.push(`exit ${r.exit_code}`);
+  stats.push(`${r.ms} ms`);
+  $(`#s-${id}`).innerHTML = stats.map(s => `<span>${esc(s)}</span>`).join("");
+  const size = r.output ? `${r.output.length.toLocaleString()} chars${r.output_truncated ? ", truncated" : ""}` : "empty";
+  $(`#r-${id}`).innerHTML = `<div class="detail">${esc(r.detail)}</div>
+    <details class="inline out"${outOpen ? " open" : ""}><summary>Full output (${size})</summary><pre class="out">${esc(r.output)}</pre></details>`;
+  $(`#c-${id}`).className = `card ${r.match ? "ok" : "bad"}`;
+}
+
 async function run(id) {
   const btn = $(`[data-run="${id}"]`);
   btn.disabled = true;
-  $(`#r-${id}`).innerHTML = `<span class="detail">running…</span>`;
+  $(`#b-${id}`).innerHTML = `<span class="muted">running…</span>`;
   try {
-    const r = await (await fetch(`/api/run/${id}`, { method: "POST" })).json();
-    results[id] = r;
-    $(`#r-${id}`).innerHTML =
-      `<span class="badge ${r.outcome}">${r.outcome}</span>
-       <span class="match ${r.match ? "yes" : "no"}" title="${r.match ? "matches" : "does not match"} the expected verdict">${r.match ? "✓" : "✗"}</span>
-       <span class="detail">${esc(r.detail)} · ${r.ms} ms</span>`;
-    $(`#c-${id}`).className = `card ${r.match ? "ok" : "bad"}`;
+    const resp = await fetch(`/api/run/${id}`, { method: "POST" });
+    if (!resp.ok) throw new Error(`HTTP ${resp.status} ${await resp.text()}`);
+    showResult(id, results[id] = await resp.json());
   } catch (e) {
-    $(`#r-${id}`).innerHTML = `<span class="badge ERROR">ERROR</span><span class="detail">${esc(e)}</span>`;
+    $(`#b-${id}`).innerHTML = `<span class="badge ERROR">ERROR</span>`;
+    $(`#r-${id}`).innerHTML = `<pre class="out">${esc(e)}</pre>`;
   } finally {
     btn.disabled = false;
     score();
@@ -153,6 +236,11 @@ $("#runAll").addEventListener("click", async () => {
   await Promise.all(actions.map(a => run(a.id)));
   $("#runAll").disabled = false;
 });
+$("#toggleOut").addEventListener("click", () => {
+  outOpen = !outOpen;
+  document.querySelectorAll("details.out").forEach(d => d.open = outOpen);
+  $("#toggleOut").textContent = outOpen ? "Collapse outputs" : "Expand outputs";
+});
 
 (async () => {
   const data = await (await fetch("/api/actions")).json();
@@ -160,8 +248,9 @@ $("#runAll").addEventListener("click", async () => {
   const where = $("#where");
   where.textContent = data.sandbox ? `in OpenShell sandbox · ${data.host}` : `not sandboxed · ${data.host}`;
   where.className = `pill ${data.sandbox ? "on" : "off"}`;
+  if (data.policy_file) $("#policyFile").textContent = data.policy_file;
   if (!data.sandbox) $("#banner").innerHTML =
-    `<div class="banner">Running outside OpenShell, so nothing is enforced: expect DENY rows to come back ALLOW or ERROR. Run <code>make sandbox</code> to see the policy in action.</div>`;
+    `<div class="banner">Running outside OpenShell, so nothing is enforced: expect DENY rows to come back ALLOW or ERROR, and the policy notes to flag this machine's Python as an unlisted binary. Run <code>make sandbox</code> to see the policy in action.</div>`;
   render();
   score();
   $("#policy").textContent = await (await fetch("/api/policy")).text();

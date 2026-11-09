@@ -10,6 +10,7 @@ from fastapi import FastAPI, HTTPException
 from fastapi.responses import FileResponse, PlainTextResponse
 
 from .actions import ROOT, load
+from .rules import explain
 
 # The server imports its own code, page and generated policy from /app.
 # @openshell fs read /app reason="application code, static page and policy.yaml"
@@ -32,12 +33,22 @@ def index() -> FileResponse:
     return FileResponse(STATIC / "index.html")
 
 
+def policy_text() -> str:
+    try:
+        return POLICY.read_text()
+    except OSError as e:
+        return f"# could not read {POLICY}: {e}\n# run `make policy` to generate it\n"
+
+
 @app.get("/api/actions")
 def list_actions() -> dict:
+    text = policy_text()
     return {
         "sandbox": in_sandbox(),
         "host": socket.gethostname(),
-        "actions": [a.describe() for a in ACTIONS.values()],
+        "policy_file": POLICY.relative_to(ROOT).as_posix(),
+        # Each action carries its exact operation (`op`) and the policy rule that governs it.
+        "actions": [{**a.describe(), "rule": explain(a.op, text)} for a in ACTIONS.values()],
     }
 
 
@@ -51,7 +62,4 @@ def run(action_id: str) -> dict:
 
 @app.get("/api/policy", response_class=PlainTextResponse)
 def policy() -> str:
-    try:
-        return POLICY.read_text()
-    except OSError as e:
-        return f"# could not read {POLICY}: {e}\n# run `make policy` to generate it\n"
+    return policy_text()

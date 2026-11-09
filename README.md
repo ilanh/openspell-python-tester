@@ -29,8 +29,10 @@ inside the sandbox. You can see whether the policy allowed or denied it, and whe
 | `GET icanhazip.com` from Python | same rule | DENY | the reverse does not hold: Python is not a child of curl |
 | (startup) | `fs read /app` in `app/main.py` | — | the server can't import its own code without it |
 
-The code is in [`app/actions/`](app/actions): `net.py`, `fs.py` and `proc.py`. Each card shows its directive lines with `file:line`,
-read live from the source.
+The code is in [`app/actions/`](app/actions): `net.py`, `fs.py` and `proc.py`. Each card shows the exact operation (method, URL,
+host, port, path, command and binary), its directive lines with `file:line` read live from the source, the matching
+entry in `policy.yaml` (or *no rule → default deny*) and the expected verdict. After a run it adds the actual outcome, a
+match/mismatch badge, the HTTP status or exit code, the duration and the full output.
 
 ## Prerequisites
 
